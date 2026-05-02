@@ -19,11 +19,14 @@ export class CustomerService {
       `[CREATE] Creating customer with data: ${JSON.stringify(createCustomerDto)}`,
     );
 
-    const { error } = await safeQuery(
-      db.insert(customer).values({
-        name: createCustomerDto.name,
-        email: createCustomerDto.email,
-      }),
+    const { data, error } = await safeQuery(
+      db
+        .insert(customer)
+        .values({
+          name: createCustomerDto.name,
+          email: createCustomerDto.email,
+        })
+        .returning(),
     );
 
     if (error) {
@@ -31,7 +34,7 @@ export class CustomerService {
     }
 
     this.logger.log(`[CREATE] Customer created successfully`);
-    return;
+    return data[0];
   }
 
   async findAll() {

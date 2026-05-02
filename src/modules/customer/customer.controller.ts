@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -18,7 +16,6 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createCustomerDto: CreateCustomerDto) {
     return this.customerService.create(createCustomerDto);
   }

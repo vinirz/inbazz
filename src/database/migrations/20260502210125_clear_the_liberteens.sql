@@ -1,0 +1,2 @@
+ALTER TABLE "product" ALTER COLUMN "price" SET DATA TYPE integer USING price::integer;--> statement-breakpoint
+ALTER TABLE "product" ALTER COLUMN "stock_quantity" SET DATA TYPE integer USING stock_quantity::integer; 
