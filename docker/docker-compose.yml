@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: order-orchestrator-postgres
+    build:
+      context: ./postgres
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: order_orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/pgdata:/var/lib/postgresql/data
+      - ./postgres/dump:/docker-entrypoint-initdb.d
+    networks:
+      - order-orchestrator-net
+
+  redis:
+    container_name: order-orchestrator-redis
+    build:
+      context: ./redis
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/redisdata:/data
+    command: ["redis-server", "--requirepass", "redispassword"]
+    networks:
+      - order-orchestrator-net
+
+  bullmq:
+    container_name: order-orchestrator-bullmq
+    build:
+      context: ./bullmq
+    image: redis:7
+    restart: always
+    ports:
+      - "6378:6378"
+    volumes:
+      - ./bullmq/bullmqdata:/data
+    command: ["redis-server", "--requirepass", "bullmqpassword"]
+    networks:
+      - order-orchestrator-net
+
+networks:
+  order-orchestrator-net:
+    driver: bridge
