@@ -1,4 +1,4 @@
-import { text, pgTable } from 'drizzle-orm/pg-core';
+import { text, pgTable, integer } from 'drizzle-orm/pg-core';
 import { v7 as uuid } from 'uuid';
 import { order } from './order';
 import { product } from './product';
@@ -10,6 +10,6 @@ export const orderProducts = pgTable('orderProducts', {
 
   order_id: text('order_id').references(() => order.id),
   product_id: text('product_id').references(() => product.id),
-  quantity: text('quantity').notNull(),
-  unit_price: text('unit_price').notNull(),
+  quantity: integer('quantity').notNull(),
+  unit_price: integer('unit_price').notNull(),
 });

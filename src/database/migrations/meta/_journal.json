@@ -15,6 +15,13 @@
       "when": 1777755685058,
       "tag": "20260502210125_clear_the_liberteens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777820571415,
+      "tag": "20260503150251_daily_stellaris",
+      "breakpoints": true
     }
   ]
 }
