@@ -23,9 +23,9 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
 
   private getRedisConfig() {
     return {
-      host: environment.REDIS_HOST,
-      port: environment.REDIS_PORT,
-      password: environment.REDIS_PASSWORD,
+      host: environment.QUEUE_REDIS_HOST,
+      port: environment.QUEUE_REDIS_PORT,
+      password: environment.QUEUE_REDIS_PASSWORD,
       family: 4,
     };
   }

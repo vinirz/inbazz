@@ -7,6 +7,13 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { IdempotencyKey } from '../../common/decorators/idempotency-key.decorator';
@@ -14,6 +21,7 @@ import { IdempotencyKeyGuard } from '../../common/guards/idempotency-key.guard';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { IdempotencyLockService } from '../../common/idempotency/idempotency-lock.service';
 
+@ApiTags('orders')
 @Controller('order')
 export class OrderController {
   logger: Logger;
@@ -28,6 +36,17 @@ export class OrderController {
 
   @Post('/webhook')
   @UseGuards(IdempotencyKeyGuard)
+  @ApiSecurity('idempotency-key')
+  @ApiOperation({
+    summary: 'Criar pedido via webhook',
+    description:
+      'Cria um novo pedido e enfileira para processamento assíncrono (conversão USD→BRL). Requer o header `idempotency-key` para garantir idempotência.',
+  })
+  @ApiResponse({ status: 201, description: 'Pedido criado e enfileirado' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou cliente/produto não encontrado',
+  })
   async create(
     @Body() createOrderDto: CreateOrderDto,
     @IdempotencyKey() idempotencyKey: string,
@@ -68,11 +87,17 @@ export class OrderController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Listar todos os pedidos' })
+  @ApiResponse({ status: 200, description: 'Lista de pedidos' })
   findAll() {
     return this.orderService.findAll();
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Buscar pedido por ID' })
+  @ApiParam({ name: 'id', description: 'UUID do pedido' })
+  @ApiResponse({ status: 200, description: 'Pedido encontrado' })
+  @ApiResponse({ status: 400, description: 'Pedido não encontrado' })
   findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);
   }
