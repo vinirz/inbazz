@@ -12,4 +12,5 @@ export const orderProducts = pgTable('orderProducts', {
   product_id: text('product_id').references(() => product.id),
   quantity: integer('quantity').notNull(),
   unit_price: integer('unit_price').notNull(),
+  unit_price_brl: integer('unit_price_brl'),
 });

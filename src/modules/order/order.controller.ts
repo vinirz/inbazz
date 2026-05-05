@@ -26,7 +26,7 @@ export class OrderController {
     this.logger = new Logger(OrderController.name);
   }
 
-  @Post()
+  @Post('/webhook')
   @UseGuards(IdempotencyKeyGuard)
   async create(
     @Body() createOrderDto: CreateOrderDto,

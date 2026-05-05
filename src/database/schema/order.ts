@@ -17,5 +17,6 @@ export const order = pgTable('order', {
 
   customer_id: text('customer_id').references(() => customer.id),
   amount: integer('amount').notNull(),
+  amount_brl: integer('amount_brl'),
   status: statusEnum('status').default('created').notNull(),
 });

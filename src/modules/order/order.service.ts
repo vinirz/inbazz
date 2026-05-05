@@ -7,12 +7,14 @@ import { product } from '../../database/schema/product';
 import { eq, inArray } from 'drizzle-orm';
 import { orderProducts } from '../../database/schema/orderProducts';
 import { customer } from '../../database/schema/customer';
+import { QueueService } from '../queue/queue.service';
+import { ORDER_QUEUE_NAME } from '../queue/order.processor';
 
 @Injectable()
 export class OrderService {
   logger: Logger;
 
-  constructor() {
+  constructor(private queueService: QueueService) {
     this.logger = new Logger(OrderService.name);
   }
 
@@ -21,48 +23,59 @@ export class OrderService {
       `[CREATE] Creating order with data: ${JSON.stringify(body)}`,
     );
 
-    const { data: customerData, error: customerError } = await safeQuery(
-      db.select().from(customer).where(eq(customer.id, body.customer_id)),
-    );
+    const [
+      { data: customerData, error: customerError },
+      { data: saleProducts, error: saleProductsError },
+    ] = await Promise.all([
+      safeQuery(
+        db.select().from(customer).where(eq(customer.id, body.customer_id)),
+      ),
+      safeQuery(
+        db
+          .select({
+            id: product.id,
+            price: product.price,
+          })
+          .from(product)
+          .where(
+            inArray(
+              product.id,
+              body.products.map((p) => p.product_id),
+            ),
+          ),
+      ),
+    ]);
 
-    if (customerError) {
-      throw new BadRequestException(customerError.cause);
+    if (customerError || saleProductsError) {
+      throw new BadRequestException(
+        customerError?.cause || saleProductsError?.cause,
+      );
     }
 
     if (customerData.length === 0) {
       throw new BadRequestException('Customer not found');
     }
 
-    const productsIds = body.products.map((p) => p.product_id);
-    const { data: saleProducts, error: saleProductsError } = await safeQuery(
-      db
-        .select({
-          id: product.id,
-          price: product.price,
-        })
-        .from(product)
-        .where(inArray(product.id, productsIds)),
+    const productMap = new Map(saleProducts.map((p) => [p.id, p]));
+    const requestedProductIds = new Set(body.products.map((p) => p.product_id));
+
+    if (productMap.size !== requestedProductIds.size) {
+      throw new BadRequestException('Some products not found');
+    }
+
+    const orderProductsData = body.products.map((orderProduct) => {
+      const prod = productMap.get(orderProduct.product_id)!;
+      return {
+        product_id: prod.id,
+        quantity: orderProduct.quantity,
+        unit_price: prod.price,
+      };
+    });
+
+    const productsSum = orderProductsData.reduce(
+      (sum, op) => sum + op.unit_price * op.quantity,
+      0,
     );
-
-    if (saleProductsError) {
-      throw new BadRequestException(saleProductsError.cause);
-    }
-
-    if (saleProducts.length === 0) {
-      throw new BadRequestException('No products found');
-    }
-
-    const productsSum = saleProducts.reduce((sum, p) => {
-      const orderProduct = body.products.find((op) => op.product_id === p.id);
-
-      if (!orderProduct) {
-        throw new BadRequestException(
-          `Product with id ${p.id} not found in order products`,
-        );
-      }
-
-      return sum + p.price * orderProduct.quantity;
-    }, 0);
 
     const { data, error } = await safeQuery(
       db.transaction(async (trx) => {
@@ -83,16 +96,10 @@ export class OrderService {
         const [orderProductsResult] = await trx
           .insert(orderProducts)
           .values(
-            saleProducts.map((product) => {
-              return {
-                order_id: orderResult.id,
-                product_id: product.id,
-                quantity:
-                  body.products.find((p) => p.product_id === product.id)
-                    ?.quantity || 0,
-                unit_price: product.price,
-              };
-            }),
+            orderProductsData.map((op) => ({
+              order_id: orderResult.id,
+              ...op,
+            })),
           )
           .returning({
             id: orderProducts.id,
@@ -102,13 +109,24 @@ export class OrderService {
           throw new BadRequestException('Order products not created');
         }
 
-        return orderResult;
+        return {
+          id: orderResult.id,
+          customer_id: body.customer_id,
+          amount: productsSum,
+          products: orderProductsData.map((op) => ({
+            product_id: op.product_id,
+            quantity: op.quantity,
+            unit_price: op.unit_price,
+          })),
+        };
       }),
     );
 
     if (error) {
       throw new BadRequestException(error.cause);
     }
+
+    await this.queueService.addJob(ORDER_QUEUE_NAME, 'process-order', data);
 
     return data;
   }
