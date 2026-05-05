@@ -6,8 +6,6 @@
 
 </div>
 
-<br/>
-
 # Order Orchestrator
 
 API REST para **orquestração de pedidos** com processamento assíncrono via fila. Ao receber um pedido, a aplicação persiste os dados, enfileira um job e — de forma assíncrona — busca a cotação do dólar em tempo real, converte os valores para BRL e atualiza o status da venda.
