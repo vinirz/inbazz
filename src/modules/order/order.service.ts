@@ -5,6 +5,7 @@ import { safeQuery } from '../../common/safe-query';
 import { order } from '../../database/schema/order';
 import { product } from '../../database/schema/product';
 import { eq, inArray } from 'drizzle-orm';
+import { FindAllOrdersDto } from './dto/find-all-orders.dto';
 import { orderProducts } from '../../database/schema/orderProducts';
 import { customer } from '../../database/schema/customer';
 import { QueueService } from '../queue/queue.service';
@@ -131,10 +132,16 @@ export class OrderService {
     return data;
   }
 
-  async findAll() {
-    this.logger.log(`[FIND ALL] Fetching all orders`);
+  async findAll(query: FindAllOrdersDto = {}) {
+    this.logger.log(
+      `[FIND ALL] Fetching all orders${query.status ? ` with status "${query.status}"` : ''}`,
+    );
 
-    const { data, error } = await safeQuery(db.select().from(order));
+    const { data, error } = await safeQuery(
+      query.status
+        ? db.select().from(order).where(eq(order.status, query.status))
+        : db.select().from(order),
+    );
 
     if (error) {
       throw new BadRequestException(error.cause);

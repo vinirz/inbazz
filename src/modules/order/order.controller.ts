@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   Logger,
 } from '@nestjs/common';
@@ -12,10 +13,12 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiSecurity,
 } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { FindAllOrdersDto, OrderStatus } from './dto/find-all-orders.dto';
 import { IdempotencyKey } from '../../common/decorators/idempotency-key.decorator';
 import { IdempotencyKeyGuard } from '../../common/guards/idempotency-key.guard';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
@@ -87,10 +90,20 @@ export class OrderController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos os pedidos' })
+  @ApiOperation({
+    summary: 'Listar todos os pedidos',
+    description:
+      'Retorna todos os pedidos. Use o query param `status` para filtrar por estado.',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: OrderStatus,
+    description: 'Filtrar por status do pedido',
+  })
   @ApiResponse({ status: 200, description: 'Lista de pedidos' })
-  findAll() {
-    return this.orderService.findAll();
+  findAll(@Query() query: FindAllOrdersDto) {
+    return this.orderService.findAll(query);
   }
 
   @Get(':id')
