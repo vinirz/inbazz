@@ -10,6 +10,8 @@
 
 API REST para **orquestração de pedidos** com processamento assíncrono via fila. Ao receber um pedido, a aplicação persiste os dados, enfileira um job e — de forma assíncrona — busca a cotação do dólar em tempo real, converte os valores para BRL e atualiza o status da venda.
 
+![Fluxo de processamento](./public/diagrama.png)
+
 ---
 
 ## Como executar o projeto
@@ -67,6 +69,18 @@ Você verá a interface interativa do **Scalar** com todos os endpoints document
 
 >[!important]
 > O spec OpenAPI bruto (JSON) também fica disponível em `http://localhost:3000/docs/openapi.json` para uso em ferramentas externas.
+
+---
+
+## Testes
+
+Para executar a suíte de testes de integração:
+
+```bash
+pnpm test
+```
+
+Para este desafio, foquei na cobertura da lógica de negócio e na orquestração assíncrona. Devido ao prazo, optei por mocar as dependências externas (Redis/Postgres) nos testes de integração. Em um cenário real de produção, a abordagem ideal seria utilizar **Testcontainers** para subir instâncias reais do banco e da fila, garantindo que as queries do Drizzle e o comportamento do BullMQ fossem validados de ponta a ponta.
 
 ---
 
