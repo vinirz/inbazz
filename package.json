@@ -80,6 +80,10 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/.pnpm/(?!(uuid|drizzle-orm))",
+      "/node_modules/(?!.pnpm)"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
